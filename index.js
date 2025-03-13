@@ -3,6 +3,7 @@ const bodyParser = require('body-parser');
 const { Markup } = require('telegraf');
 const path = require('path');
 const fs = require('fs');
+const ejs = require('ejs');
 const TelegramBot = require('node-telegram-bot-api');
 
 // Configuration
