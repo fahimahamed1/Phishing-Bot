@@ -1,16 +1,34 @@
 {
-  "name": "Phishing-Bot",
+  "name": "telegram-bot-admin-panel",
   "version": "1.0.0",
-  "description": "Social media hack with admin full control",
+  "description": "Telegram bot with admin panel using Express and Telegraf (node-telegram-bot-api), file management, and .ejs page handling.",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "lint": "eslint ."
   },
+  "keywords": [
+    "telegram-bot",
+    "telegraf",
+    "node-telegram-bot-api",
+    "express",
+    "admin-panel",
+    "ejs",
+    "file-upload"
+  ],
+  "author": "fahim",
+  "license": "MIT",
   "dependencies": {
-    "express": "*",
-    "body-parser": "*",
-    "telegraf": "*",
-    "node-telegram-bot-api": "*",
-    "ejs": "*"
+    "body-parser": "^1.20.2",
+    "ejs": "^3.1.9",
+    "express": "^4.18.2",
+    "node-fetch": "^2.6.7",
+    "node-telegram-bot-api": "^0.61.0",
+    "path": "^0.12.7"
+  },
+  "devDependencies": {
+    "eslint": "^8.57.0",
+    "nodemon": "^3.0.3"
   }
 }

