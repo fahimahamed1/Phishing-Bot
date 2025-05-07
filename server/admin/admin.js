@@ -1,10 +1,10 @@
-const { isAdmin } = require('../utils/helpers');
+const { isAdmin } = require('../utils/checkadmin');
 const premiumModule = require('./handler/premium');
 
 const modules = [
   require('./handler/premium'),
   require('./handler/pending'),
-  require('./handler/approve'),
+  require('./handler/approved'),
   require('./handler/suspend'),
   require('./handler/suspended'),
   require('./handler/delete'),
@@ -20,7 +20,7 @@ const modules = [
 // Extracted panel buttons to reuse for "Back to Admin Panel"
 const adminPanelButtons = [
   [
-    { text: '🔑 Premium', callback_data: 'toggle_premium' },
+    { text: '🔑 Premium', callback_data: 'premium_list' },
     { text: '👥 Pending Users', callback_data: 'view_pending' },
     { text: '🚫 Suspend', callback_data: 'suspend_user' },
   ],

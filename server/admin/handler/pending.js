@@ -1,4 +1,3 @@
-// server/admin/handler/pending.js
 const fs = require('fs');
 const {
   pendingUsers,
@@ -6,39 +5,71 @@ const {
   pendingUsersFile,
   approvedUsersFile
 } = require('../../connection/db');
+const { safeEditMessageText } = require('../../utils/safeEditMessageText');
+const { isAdmin } = require('../../utils/checkadmin');
 
-// Show pending users with approval buttons
-function showPendingUsers(chatId, bot) {
-  if (pendingUsers.size === 0) {
-    return bot.sendMessage(chatId, 'No pending users.');
-  }
+// Create the Back to Admin Panel button
+const createBackButton = () => ({
+  text: '⬅️ Back to Admin Panel',
+  callback_data: 'back_to_admin_panel',
+});
 
-  const keyboard = [...pendingUsers].map((userId) => [{
-    text: `Approve ${userId}`,
-    callback_data: `approve_${userId}`
-  }]);
+// Show pending users with approval buttons (3 per row)
+function showPendingUsers(chatId, bot, messageId = null) {
+  const text = pendingUsers.size === 0
+    ? 'No pending users.'
+    : '⏳ *Pending Users:*';
 
-  bot.sendMessage(chatId, '⏳ Pending Users:', {
-    reply_markup: { inline_keyboard: keyboard }
+  const keyboard = [];
+  let row = [];
+
+  [...pendingUsers].forEach((userId, index) => {
+    row.push({
+      text: `Approve ${userId}`,
+      callback_data: `approve_${userId}`
+    });
+
+    if (row.length === 3 || index === pendingUsers.size - 1) {
+      keyboard.push(row);
+      row = [];
+    }
   });
+
+  // Add back button
+  keyboard.push([createBackButton()]);
+
+  const replyMarkup = { inline_keyboard: keyboard };
+
+  if (messageId) {
+    return safeEditMessageText(bot, chatId, messageId, text, replyMarkup, 'Markdown');
+  } else {
+    return bot.sendMessage(chatId, text, {
+      reply_markup: replyMarkup,
+      parse_mode: 'Markdown'
+    });
+  }
 }
 
 // Register the button click handling for the approval logic
 function register(bot) {
   bot.on('callback_query', (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
+    const messageId = callbackQuery.message.message_id;
     const data = callbackQuery.data;
 
     bot.answerCallbackQuery(callbackQuery.id).catch((err) =>
       console.error('Failed to answer callback query:', err.message)
     );
 
-    // Button: View pending users
+    // Admin check
+    if (!isAdmin(chatId)) return;
+
+    // View pending users
     if (data === 'view_pending') {
-      return showPendingUsers(chatId, bot);
+      return showPendingUsers(chatId, bot, messageId);
     }
 
-    // Button: Approve a specific pending user
+    // Approve user
     if (data.startsWith('approve_')) {
       const userId = parseInt(data.replace('approve_', ''));
       if (isNaN(userId)) return;
@@ -55,11 +86,23 @@ function register(bot) {
         fs.writeFileSync(approvedUsersFile, JSON.stringify([...approvedUsers]));
 
         bot.sendMessage(userId, '✅ You have been approved! You can now use the bot.');
-        bot.sendMessage(chatId, `✅ User ${userId} approved successfully.`);
+
+        // Refresh the list
+        showPendingUsers(chatId, bot, messageId);
+
       } catch (err) {
         console.error('❌ Error saving user status:', err.message);
         bot.sendMessage(chatId, '❌ Failed to approve user due to a system error.');
       }
+    }
+
+    // Back to admin panel
+    if (data === 'back_to_admin_panel') {
+      const { adminPanelButtons } = require('../admin');
+      return safeEditMessageText(bot, chatId, messageId, '🔧 *Admin Panel:* Choose an option:', {
+        inline_keyboard: adminPanelButtons,
+        parse_mode: 'Markdown'
+      });
     }
   });
 }

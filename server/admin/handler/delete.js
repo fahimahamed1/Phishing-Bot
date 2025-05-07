@@ -9,9 +9,16 @@ const {
   suspendedUsersFile,
   timerUsersFile
 } = require('../../connection/db');
+const { safeEditMessageText } = require('../../utils/safeEditMessageText');
 
-// Utility: Remove user from all sets
-const deleteUserFromSets = (userId) => {
+// Create Back Button
+const createBackButton = () => ({
+  text: '⬅️ Back to Admin Panel',
+  callback_data: 'back_to_admin_panel',
+});
+
+// Utility: Remove user from all lists but leave the timer intact
+const deleteUserFromLists = (userId) => {
   let removed = false;
 
   if (approvedUsers.has(userId)) {
@@ -19,86 +26,90 @@ const deleteUserFromSets = (userId) => {
     fs.writeFileSync(approvedUsersFile, JSON.stringify([...approvedUsers], null, 2));
     removed = true;
   }
-
   if (pendingUsers.has(userId)) {
     pendingUsers.delete(userId);
     fs.writeFileSync(pendingUsersFile, JSON.stringify([...pendingUsers], null, 2));
     removed = true;
   }
-
   if (suspendedUsers.has(userId)) {
     suspendedUsers.delete(userId);
     fs.writeFileSync(suspendedUsersFile, JSON.stringify([...suspendedUsers], null, 2));
     removed = true;
   }
-
   return removed;
 };
 
-// Display user list for deletion or timer removal
-const showDeletionOptions = (chatId, bot) => {
+// Show deletion or timer removal options for all users (with up to 3 buttons per row)
+const showDeletionOptions = (chatId, bot, messageId = null) => {
   const allUsers = [...approvedUsers, ...pendingUsers, ...suspendedUsers];
+  const timerUsersList = [...timerUsers.keys()];
+  const usersToDisplay = [...new Set([...allUsers, ...timerUsersList])];
 
-  if (allUsers.length === 0) {
-    return bot.sendMessage(chatId, '❌ No users to delete.');
+  console.log("Users to Display (including timers): ", usersToDisplay);
+
+  let text = '';
+  const inlineKeyboard = [];
+
+  if (usersToDisplay.length === 0) {
+    text = '❌ *No users to delete or remove timer.*';
+  } else {
+    text = '⏳ *Select a user to delete or remove timer:*';
+
+    const buttons = [];
+
+    usersToDisplay.forEach(userId => {
+      buttons.push({
+        text: `🗑 ${userId}`,
+        callback_data: `user_delete_${userId}`
+      });
+
+      if (timerUsersList.includes(userId) || timerUsersList.includes(String(userId))) {
+        buttons.push({
+          text: `🕒 Timer ${userId}`,
+          callback_data: `delete_timer_${userId}`
+        });
+      }
+    });
+
+    // Arrange up to 3 buttons per row
+    for (let i = 0; i < buttons.length; i += 3) {
+      inlineKeyboard.push(buttons.slice(i, i + 3));
+    }
   }
 
-  const keyboard = allUsers.map(userId => {
-    const deleteButton = { text: `🗑 Delete ${userId}`, callback_data: `user_delete_confirm_${userId}` };
-    const timerButton = (timerUsers.has(userId) || timerUsers.has(String(userId)))
-      ? { text: `🕒 Remove Timer ${userId}`, callback_data: `delete_timer_${userId}` }
-      : null;
+  // Always add back button
+  inlineKeyboard.push([createBackButton()]);
 
-    return timerButton ? [deleteButton, timerButton] : [deleteButton];
-  });
-
-  bot.sendMessage(chatId, '⏳ Select a user to delete or remove timer:', {
-    reply_markup: { inline_keyboard: keyboard }
-  });
+  if (messageId) {
+    return safeEditMessageText(bot, chatId, messageId, text, { inline_keyboard: inlineKeyboard }, 'Markdown');
+  } else {
+    return bot.sendMessage(chatId, text, {
+      reply_markup: { inline_keyboard: inlineKeyboard },
+      parse_mode: 'Markdown'
+    });
+  }
 };
 
-// Register handler
+// Register handler for user deletion and timer removal
 const register = (bot) => {
   bot.on('callback_query', (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
+    const messageId = callbackQuery.message.message_id;
     const data = callbackQuery.data;
 
     bot.answerCallbackQuery(callbackQuery.id).catch(console.error);
 
-    // Entry point: button from admin panel
     if (data === 'delete_user') {
-      return showDeletionOptions(chatId, bot);
+      return showDeletionOptions(chatId, bot, messageId);
     }
 
-    // Ask confirmation before deleting
-    if (data.startsWith('user_delete_confirm_')) {
-      const userId = Number(data.replace('user_delete_confirm_', ''));
-      const confirmKeyboard = {
-        inline_keyboard: [
-          [{ text: '✅ Yes, delete', callback_data: `user_delete_final_${userId}` }],
-          [{ text: '❌ Cancel', callback_data: 'user_delete_cancel' }]
-        ]
-      };
-      return bot.sendMessage(chatId, `⚠️ Are you sure you want to delete User ID ${userId}?`, {
-        reply_markup: confirmKeyboard
-      });
+    if (data.startsWith('user_delete_')) {
+      const userId = Number(data.replace('user_delete_', ''));
+      deleteUserFromLists(userId);
+
+      return showDeletionOptions(chatId, bot, messageId);
     }
 
-    // Perform actual deletion
-    if (data.startsWith('user_delete_final_')) {
-      const userId = Number(data.replace('user_delete_final_', ''));
-      const removed = deleteUserFromSets(userId);
-      return bot.sendMessage(chatId, removed
-        ? `✅ User ${userId} has been deleted.`
-        : `⚠️ User ${userId} was not found in any list.`);
-    }
-
-    // Cancel deletion
-    if (data === 'user_delete_cancel') {
-      return bot.sendMessage(chatId, '❌ Deletion cancelled.');
-    }
-
-    // Timer deletion
     if (data.startsWith('delete_timer_')) {
       const userId = Number(data.replace('delete_timer_', ''));
       if (timerUsers.has(userId) || timerUsers.has(String(userId))) {
@@ -108,15 +119,20 @@ const register = (bot) => {
         try {
           const timerObj = Object.fromEntries(timerUsers);
           fs.writeFileSync(timerUsersFile, JSON.stringify(timerObj, null, 2));
-          bot.sendMessage(chatId, `✅ Timer removed for User ID: ${userId}`);
           bot.sendMessage(userId, "❌ Your timer has been removed by an admin.");
         } catch (err) {
           console.error(err);
-          bot.sendMessage(chatId, `❌ Error removing timer: ${err.message}`);
         }
-      } else {
-        bot.sendMessage(chatId, "❌ This user does not have an active timer.");
       }
+      return showDeletionOptions(chatId, bot, messageId);
+    }
+
+    if (data === 'back_to_admin_panel') {
+      const { adminPanelButtons } = require('../admin');
+      return safeEditMessageText(bot, chatId, messageId, '🔧 *Admin Panel:* Choose an option:', {
+        inline_keyboard: adminPanelButtons,
+        parse_mode: 'Markdown'
+      });
     }
   });
 };

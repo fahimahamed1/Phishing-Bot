@@ -6,29 +6,61 @@ const {
   approvedUsersFile
 } = require('../../connection/db');
 
-// Prompt admin to enter chat ID
-const promptForChatId = (chatId, bot) => {
-  bot.sendMessage(chatId, 'Please provide the Chat ID of the user you want to approve:');
-  users[chatId] = { step: 'entering_chatid' };
+// Prompt admin to enter chat IDs
+const promptForChatIds = (chatId, bot) => {
+  bot.sendMessage(chatId, 'Please provide the Chat ID(s) of the user(s) you want to approve:\n\nYou can send them separated by commas, spaces, or new lines.');
+  users[chatId] = { step: 'entering_chatids' };
 };
 
-// Add custom user after admin sends chat ID
-const handleAddCustomUser = (chatId, enteredChatId, bot) => {
-  const chatIdInt = parseInt(enteredChatId);
+// Add custom users after admin sends chat IDs
+const handleAddCustomUsers = (chatId, enteredChatIds, bot) => {
+  // Normalize input: replace commas and newlines with spaces
+  const normalizedInput = enteredChatIds.replace(/[,|\n]/g, ' ');
 
-  if (isNaN(chatIdInt)) {
-    return bot.sendMessage(chatId, '❌ Invalid Chat ID. Please enter a valid number.');
+  // Split by spaces and clean up
+  const chatIds = normalizedInput.split(' ').map(id => id.trim()).filter(id => id.length > 0);
+
+  const newlyApproved = [];
+  const alreadyApproved = [];
+  const invalidIds = [];
+
+  for (const id of chatIds) {
+    const chatIdInt = parseInt(id);
+
+    if (isNaN(chatIdInt)) {
+      invalidIds.push(id);
+      continue;
+    }
+
+    if (approvedUsers.has(chatIdInt)) {
+      alreadyApproved.push(chatIdInt);
+      continue;
+    }
+
+    approvedUsers.add(chatIdInt);
+    newlyApproved.push(chatIdInt);
+
+    // Notify the approved user
+    bot.sendMessage(chatIdInt, '✅ You have been approved and can now use the bot.');
   }
 
-  if (approvedUsers.has(chatIdInt)) {
-    return bot.sendMessage(chatId, '❌ This user is already approved.');
-  }
-
-  approvedUsers.add(chatIdInt);
+  // Save updated approved users list
   fs.writeFileSync(approvedUsersFile, JSON.stringify([...approvedUsers], null, 2));
 
-  bot.sendMessage(chatId, `✅ User with Chat ID ${chatIdInt} has been added to approved users.`);
-  bot.sendMessage(chatIdInt, '✅ You have been approved and can now use the bot.');
+  // Send admin a summary
+  let message = '';
+
+  if (newlyApproved.length > 0) {
+    message += `✅ Newly approved users:\n${newlyApproved.join('\n')}\n\n`;
+  }
+  if (alreadyApproved.length > 0) {
+    message += `⚠️ Already approved users:\n${alreadyApproved.join('\n')}\n\n`;
+  }
+  if (invalidIds.length > 0) {
+    message += `❌ Invalid IDs (not numbers):\n${invalidIds.join('\n')}`;
+  }
+
+  bot.sendMessage(chatId, message.trim());
 
   users[chatId].step = null; // reset step
 };
@@ -43,7 +75,7 @@ const register = (bot) => {
     if (data !== 'add_custom_user') return;
 
     bot.answerCallbackQuery(callbackQuery.id).catch(console.error);
-    promptForChatId(chatId, bot);
+    promptForChatIds(chatId, bot);
   });
 
   // Handle chat ID input
@@ -51,8 +83,8 @@ const register = (bot) => {
     const chatId = msg.chat.id;
     const step = users[chatId]?.step;
 
-    if (step === 'entering_chatid') {
-      handleAddCustomUser(chatId, msg.text, bot);
+    if (step === 'entering_chatids') {
+      handleAddCustomUsers(chatId, msg.text, bot);
     }
   });
 };

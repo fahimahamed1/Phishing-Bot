@@ -1,4 +1,3 @@
-// server/function/create.js
 const fs = require('fs');
 const path = require('path');
 const { users } = require('../connection/db');
@@ -7,7 +6,9 @@ const { bot } = require('../serverSetup');
 const { hostURL } = require('../connection/config');
 
 // Handle /create command
-const handleCreateCommand = (chatId) => {
+const handleCreateCommand = (msg) => {
+  const chatId = msg.chat.id;
+
   if (!users[chatId]) {
     bot.sendMessage(chatId, 'Please use the /start command first.');
     return;
@@ -90,19 +91,14 @@ const handleURLInput = (msg) => {
   }
 };
 
-// Telegram handlers
-bot.onText(/\/create/, (msg) => {
-  handleCreateCommand(msg.chat.id);
-});
-
 bot.on('callback_query', (callbackQuery) => {
   handleFileSelection(callbackQuery);
 });
 
 bot.on('message', (msg) => {
-  // Avoid handling /create again here
+  // Avoid handling /create again here 
   if (msg.text && !msg.text.startsWith('/')) {
-    handleURLInput(msg);
+    handleURLInput(msg); 
   }
 });
 

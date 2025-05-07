@@ -47,7 +47,7 @@ To run this bot locally or server, follow these steps:
 1. clone the repository
    ```bash
    git clone https://github.com/fahimahamed1/Phishing-bot.git
-
+   
 2. cd Phishing-bot
 
 3. Configure the bot
@@ -60,8 +60,8 @@ To run this bot locally or server, follow these steps:
       hostURL: 'YOUR_SERVER_URL',
       adminChatId: 'YOUR_ADMIN_CHAT_ID'
       };
+      
 4. npm start
 
 
 Would you like to include steps for installing dependencies and starting the bot as well?
-

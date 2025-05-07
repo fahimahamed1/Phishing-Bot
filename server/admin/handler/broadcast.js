@@ -1,6 +1,8 @@
-// server/admin/handler/broadcast.js
 const { approvedUsers, pendingUsers, suspendedUsers, users } = require('../../connection/db');
-const { isAdmin, getUserName } = require('../../utils/helpers');
+const { isAdmin } = require('../../utils/checkadmin');
+const { getUserName } = require('../../utils/showusername');
+const { safeEditMessageText } = require('../../utils/safeEditMessageText');
+const { createBackButton } = require('../../utils/backButton');
 
 const STATES = {
   SELECT_USER: 'broadcast_select_user',
@@ -8,91 +10,116 @@ const STATES = {
   MESSAGE_FOR_ALL: 'broadcast_msg_all'
 };
 
+// Buttons
+const createBackToBroadcastMenuButton = () => ({
+  text: '⬅️ Back to Broadcast Menu', callback_data: 'back_to_broadcast_menu'
+});
+
+// Broadcast Menu
+const getBroadcastMenuOptions = () => ({
+  inline_keyboard: [
+    [
+      { text: '📤 Specific User', callback_data: 'broadcast_specific' },
+      { text: '📢 All Users', callback_data: 'broadcast_all' }
+    ],
+    [createBackButton()]
+  ]
+});
+
 function register(bot) {
-  // Handle broadcast button press
-  bot.on('callback_query', (callbackQuery) => {
+  bot.on('callback_query', async (callbackQuery) => {
     const chatId = callbackQuery.message.chat.id;
+    const messageId = callbackQuery.message.message_id;
     const data = callbackQuery.data;
-
-    if (data !== 'broadcast') return;
 
     if (!isAdmin(chatId)) {
       return bot.answerCallbackQuery(callbackQuery.id, {
-        text: "❌ Access Denied",
+        text: '❌ Access Denied',
         show_alert: true
       });
     }
 
-    bot.answerCallbackQuery(callbackQuery.id); // Acknowledge button click
+    await bot.answerCallbackQuery(callbackQuery.id).catch(console.error);
 
-    const options = {
-      reply_markup: {
-        inline_keyboard: [
-          [
-            { text: 'Specific', callback_data: 'broadcast_specific' },
-            { text: 'All', callback_data: 'broadcast_all' }
-          ],
-        ]
-      }
-    };
+    // Stop any active broadcast session when going back
+    if (data === 'broadcast' || data === 'back_to_broadcast_menu') {
+      users[chatId] = null; // << CLEAR the user session
 
-    bot.sendMessage(chatId, 'Please choose how to broadcast the message:', options);
-  });
-
-  // Handle sub-options
-  bot.on('callback_query', (callbackQuery) => {
-    const chatId = callbackQuery.message.chat.id;
-    const data = callbackQuery.data;
-
-    if (!data.startsWith('broadcast_') || data === 'broadcast') return;
-
-    if (!isAdmin(chatId)) {
-      return bot.answerCallbackQuery(callbackQuery.id, {
-        text: "❌ Unauthorized",
-        show_alert: true
-      });
+      return safeEditMessageText(
+        bot, chatId, messageId,
+        '📢 *Please choose how to broadcast your message:*',
+        getBroadcastMenuOptions(),
+        'Markdown'
+      );
     }
 
-    bot.answerCallbackQuery(callbackQuery.id);
+    if (data === 'back_to_admin_panel') {
+      users[chatId] = null; // << CLEAR the user session
+
+      const { adminPanelButtons } = require('../admin');
+      return safeEditMessageText(
+        bot, chatId, messageId,
+        '🔧 *Admin Panel:* Choose an option:',
+        { inline_keyboard: adminPanelButtons },
+        'Markdown'
+      );
+    }
 
     if (data === 'broadcast_specific') {
       const userList = [...approvedUsers, ...pendingUsers, ...suspendedUsers];
+
       if (userList.length === 0) {
-        return bot.sendMessage(chatId, '❌ No users found.');
+        return safeEditMessageText(
+          bot, chatId, messageId,
+          '❌ No users available for selection.',
+          { inline_keyboard: [[createBackToBroadcastMenuButton()]] },
+          'Markdown'
+        );
       }
 
-      let msg = '*Select a user to send a message:*\n\n';
-      userList.forEach((id, i) => {
+      let userListText = '*Select a user to send a message:*\n\n';
+      userList.forEach((id, index) => {
         const name = getUserName(id);
-        msg += `${i + 1}. ${name} (ID: ${id})\n`;
+        userListText += `${index + 1}. ${name} (ID: ${id})\n`;
       });
 
       users[chatId] = { step: STATES.SELECT_USER, list: userList };
-      bot.sendMessage(chatId, msg, { parse_mode: 'Markdown' });
+
+      return safeEditMessageText(
+        bot, chatId, messageId,
+        userListText,
+        { inline_keyboard: [[createBackToBroadcastMenuButton()]] },
+        'Markdown'
+      );
     }
 
     if (data === 'broadcast_all') {
       users[chatId] = { step: STATES.MESSAGE_FOR_ALL };
-      bot.sendMessage(chatId, 'Enter the message to broadcast to all users:');
+
+      return safeEditMessageText(
+        bot, chatId, messageId,
+        '✍️ *Please enter the message to broadcast to all users:*',
+        { inline_keyboard: [[createBackToBroadcastMenuButton()]] },
+        'Markdown'
+      );
     }
   });
 
-  // Handle message replies
   bot.on('message', async (msg) => {
     const chatId = msg.chat.id;
     const state = users[chatId]?.step;
 
-    if (!state) return;
+    if (!state) return; // No active state, ignore message
 
     if (state === STATES.SELECT_USER) {
       const index = parseInt(msg.text.trim()) - 1;
-      const list = users[chatId].list;
+      const userList = users[chatId].list;
 
-      if (isNaN(index) || index < 0 || index >= list.length) {
-        return bot.sendMessage(chatId, '❌ Invalid selection.');
+      if (isNaN(index) || index < 0 || index >= userList.length) {
+        return bot.sendMessage(chatId, '❌ Invalid selection. Please send a valid number.');
       }
 
-      const targetId = list[index];
+      const targetId = userList[index];
       const targetName = getUserName(targetId);
 
       users[chatId] = {
@@ -101,35 +128,36 @@ function register(bot) {
         targetName
       };
 
-      bot.sendMessage(chatId, `Selected *${targetName}* (ID: ${targetId}).\nEnter your message:`, {
+      return bot.sendMessage(chatId, `✅ Selected *${targetName}*.\n\n✍️ Please enter the message you want to send:`, {
         parse_mode: 'Markdown'
       });
     }
 
-    else if (state === STATES.MESSAGE_FOR_SPECIFIC) {
+    if (state === STATES.MESSAGE_FOR_SPECIFIC) {
       const { targetId, targetName } = users[chatId];
       const userMessage = msg.text;
 
       try {
         await bot.sendMessage(targetId, `<b>${userMessage}</b>`, { parse_mode: 'HTML' });
-        await bot.sendMessage(chatId, `✅ Message sent to ${targetName} (ID: ${targetId})`);
+        await bot.sendMessage(chatId, `✅ Message successfully sent to *${targetName}* (ID: ${targetId})`, { parse_mode: 'Markdown' });
       } catch (err) {
         await bot.sendMessage(chatId, `❌ Failed to send message. Error: ${err.message}`);
       }
 
-      users[chatId] = null;
+      users[chatId] = null; // Clear session after sending
     }
 
-    else if (state === STATES.MESSAGE_FOR_ALL) {
+    if (state === STATES.MESSAGE_FOR_ALL) {
       const userMessage = msg.text;
       const allUsers = [...approvedUsers, ...pendingUsers, ...suspendedUsers];
 
-      allUsers.forEach(id => {
-        bot.sendMessage(id, `<b>${userMessage}</b>`, { parse_mode: 'HTML' }).catch(() => {});
+      allUsers.forEach(userId => {
+        bot.sendMessage(userId, `<b>${userMessage}</b>`, { parse_mode: 'HTML' }).catch(() => {});
       });
 
-      bot.sendMessage(chatId, `✅ Broadcast sent to ${allUsers.length} users.`);
-      users[chatId] = null;
+      await bot.sendMessage(chatId, `✅ Your broadcast was sent to *${allUsers.length}* users.`, { parse_mode: 'Markdown' });
+
+      users[chatId] = null; // Clear session after broadcast
     }
   });
 }
