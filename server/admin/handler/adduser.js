@@ -4,7 +4,7 @@ const {
   users,
   approvedUsers,
   approvedUsersFile
-} = require('../../connection/db');
+} = require('../src/connection/db');
 
 // Prompt admin to enter chat IDs
 const promptForChatIds = (chatId, bot) => {

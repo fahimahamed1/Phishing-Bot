@@ -8,8 +8,8 @@ const {
   pendingUsersFile,
   suspendedUsersFile,
   timerUsersFile
-} = require('../../connection/db');
-const { safeEditMessageText } = require('../../utils/safeEditMessageText');
+} = require('../src/connection/db');
+const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
 
 // Create Back Button
 const createBackButton = () => ({

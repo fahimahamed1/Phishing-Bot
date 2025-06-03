@@ -2,18 +2,18 @@
 const fs = require('fs');
 const path = require('path');
 
-// Create the 'data' directory in the project root if it doesn't exist
-const dataDirectory = path.join(__dirname, '..', 'data');
-if (!fs.existsSync(dataDirectory)) {
-  fs.mkdirSync(dataDirectory, { recursive: true });
+// Create the 'storage' directory in the project root if it doesn't exist
+const storageDirectory = path.join(__dirname, '..', 'storage');
+if (!fs.existsSync(storageDirectory)) {
+  fs.mkdirSync(storageDirectory, { recursive: true });
 }
 
 // File Paths
-const usersFile = path.join(dataDirectory, 'users.json');
-const approvedUsersFile = path.join(dataDirectory, 'approvedUsers.json');
-const pendingUsersFile = path.join(dataDirectory, 'pendingUsers.json');
-const suspendedUsersFile = path.join(dataDirectory, 'suspendedUsers.json');
-const timerUsersFile = path.join(dataDirectory, 'timerUsers.json');
+const usersFile = path.join(storageDirectory, 'users.json');
+const approvedUsersFile = path.join(storageDirectory, 'approvedUsers.json');
+const pendingUsersFile = path.join(storageDirectory, 'pendingUsers.json');
+const suspendedUsersFile = path.join(storageDirectory, 'suspendedUsers.json');
+const timerUsersFile = path.join(storageDirectory, 'timerUsers.json');
 
 // Data Stores
 const users = {};

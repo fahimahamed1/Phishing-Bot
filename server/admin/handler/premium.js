@@ -1,6 +1,6 @@
-const { approvedUsers, pendingUsers } = require('../../connection/db');
-const { isAdmin } = require('../../utils/checkadmin');
-const { safeEditMessageText } = require('../../utils/safeEditMessageText'); // Import safeEditMessageText
+const { approvedUsers, pendingUsers } = require('../src/connection/db');
+const { isAdmin } = require('../src/utils/checkadmin');
+const { safeEditMessageText } = require('../src/utils/safeEditMessageText'); // Import safeEditMessageText
 
 let premiumMode = false;
 

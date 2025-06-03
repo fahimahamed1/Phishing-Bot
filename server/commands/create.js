@@ -1,12 +1,13 @@
 const fs = require('fs');
 const path = require('path');
-const { users } = require('../connection/db');
+require('dotenv').config(); // Load env variables
+const { users } = require('../admin/src/connection/db');
 const { checkPremiumMode } = require('../admin/handler/premium');
-const { bot } = require('../serverSetup');
-const { hostURL } = require('../connection/config');
+
+const hostURL = process.env.HOST_URL;
 
 // Handle /create command
-const handleCreateCommand = (msg) => {
+function handleCreateCommand(bot, msg) {
   const chatId = msg.chat.id;
 
   if (!users[chatId]) {
@@ -15,11 +16,6 @@ const handleCreateCommand = (msg) => {
   }
 
   if (!checkPremiumMode(chatId)) return;
-
-  if (users[chatId].step === 'selecting_file') {
-    bot.sendMessage(chatId, '⚠️ You are already selecting a file. Please choose one from the list.');
-    return;
-  }
 
   users[chatId].step = 'selecting_file';
 
@@ -30,8 +26,9 @@ const handleCreateCommand = (msg) => {
       return;
     }
 
-    const fileNames = files.filter(file => path.extname(file) === '.ejs')
-                           .map(file => path.basename(file, '.ejs'));
+    const fileNames = files
+      .filter(file => path.extname(file) === '.ejs')
+      .map(file => path.basename(file, '.ejs'));
 
     if (fileNames.length === 0) {
       bot.sendMessage(chatId, 'No files found in the /views folder.');
@@ -49,10 +46,10 @@ const handleCreateCommand = (msg) => {
       }
     });
   });
-};
+}
 
 // Handle file selection
-const handleFileSelection = (callbackQuery) => {
+function handleFileSelection(bot, callbackQuery) {
   const chatId = callbackQuery.message.chat.id;
   const data = callbackQuery.data;
 
@@ -68,10 +65,10 @@ const handleFileSelection = (callbackQuery) => {
 
     bot.sendMessage(chatId, `You selected: ${selectedFileName}\n🌐 Now enter your URL.`);
   }
-};
+}
 
 // Handle URL input
-const handleURLInput = (msg) => {
+function handleURLInput(bot, msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
 
@@ -89,19 +86,22 @@ const handleURLInput = (msg) => {
 
     users[chatId].step = null;
   }
-};
+}
 
-bot.on('callback_query', (callbackQuery) => {
-  handleFileSelection(callbackQuery);
-});
+// Register handlers
+function register(bot) {
+  bot.on('callback_query', (callbackQuery) => {
+    handleFileSelection(bot, callbackQuery);
+  });
 
-bot.on('message', (msg) => {
-  // Avoid handling /create again here 
-  if (msg.text && !msg.text.startsWith('/')) {
-    handleURLInput(msg); 
-  }
-});
+  bot.on('message', (msg) => {
+    if (msg.text && !msg.text.startsWith('/')) {
+      handleURLInput(bot, msg);
+    }
+  });
+}
 
 module.exports = {
-  handleCreateCommand
+  handleCreateCommand,
+  register
 };

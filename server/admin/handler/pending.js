@@ -4,9 +4,9 @@ const {
   approvedUsers,
   pendingUsersFile,
   approvedUsersFile
-} = require('../../connection/db');
-const { safeEditMessageText } = require('../../utils/safeEditMessageText');
-const { isAdmin } = require('../../utils/checkadmin');
+} = require('../src/connection/db');
+const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
+const { isAdmin } = require('../src/utils/checkadmin');
 
 // Create the Back to Admin Panel button
 const createBackButton = () => ({

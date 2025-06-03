@@ -4,9 +4,9 @@ const {
   suspendedUsers,
   approvedUsersFile,
   suspendedUsersFile
-} = require('../../connection/db');
-const { safeEditMessageText } = require('../../utils/safeEditMessageText');
-const { isAdmin } = require('../../utils/checkadmin');
+} = require('../src/connection/db');
+const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
+const { isAdmin } = require('../src/utils/checkadmin');
 
 // Back button
 const createBackButton = () => ({

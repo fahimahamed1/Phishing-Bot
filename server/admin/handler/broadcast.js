@@ -1,8 +1,8 @@
-const { approvedUsers, pendingUsers, suspendedUsers, users } = require('../../connection/db');
-const { isAdmin } = require('../../utils/checkadmin');
-const { getUserName } = require('../../utils/showusername');
-const { safeEditMessageText } = require('../../utils/safeEditMessageText');
-const { createBackButton } = require('../../utils/backButton');
+const { approvedUsers, pendingUsers, suspendedUsers, users } = require('../src/connection/db');
+const { isAdmin } = require('../src/utils/checkadmin');
+const { getUserName } = require('../src/utils/showusername');
+const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
+const { createBackButton } = require('../src/utils/backButton');
 
 const STATES = {
   SELECT_USER: 'broadcast_select_user',

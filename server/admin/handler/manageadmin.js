@@ -1,27 +1,10 @@
-const fs = require('fs');
 const path = require('path');
+const { getAdmins, isAdmin } = require('../src/utils/checkadmin');
+const { addAdmin, removeAdmin } = require('../src/utils/adminmanage');
 
-// Path to config file
-const configPath = path.resolve(__dirname, '../../connection/config.js');
 let awaitingAdminInput = {}; // Track waiting users
 let accessGranted = false; // Admin access flag
 let lastMessageCache = {}; // Cache for message edits
-
-// Load admins from config
-function loadAdmins() {
-  delete require.cache[require.resolve(configPath)];
-  const config = require(configPath);
-  return config.adminChatId.split(',').map(id => id.trim());
-}
-
-// Save admins to config
-function saveAdmins(admins) {
-  let configText = fs.readFileSync(configPath, 'utf8');
-  const newAdminString = admins.join(',');
-  configText = configText.replace(/adminChatId:\s*"(.*?)"/, `adminChatId: "${newAdminString}"`);
-  fs.writeFileSync(configPath, configText, 'utf8');
-  delete require.cache[require.resolve(configPath)];
-}
 
 // Get admin options for the panel
 function getAdminOptions() {
@@ -60,24 +43,29 @@ function safeEditMessageText(bot, chatId, messageId, newText, replyMarkup) {
 async function handleRemoveCallback(callbackQuery, bot) {
   const chatId = callbackQuery.message.chat.id;
   const messageId = callbackQuery.message.message_id;
-  const data = callbackQuery.data;
-  const idToRemove = data.replace('remove_admin_', '');
-
-  let admins = loadAdmins();
+  const idToRemove = callbackQuery.data.replace('remove_admin_', '');
+  const admins = getAdmins();
   const isPrimary = chatId.toString() === admins[0];
 
-  if (!isPrimary && !accessGranted) return bot.sendMessage(chatId, '❌ Only the primary admin can remove admins.');
-  if (idToRemove === admins[0]) return bot.sendMessage(chatId, '❌ Cannot remove the primary admin.');
-  if (!admins.includes(idToRemove)) return bot.sendMessage(chatId, '⚠️ Admin ID not found.');
+  if (!isPrimary && !accessGranted) {
+    return bot.sendMessage(chatId, '❌ Only the primary admin can remove admins.');
+  }
+  if (idToRemove === admins[0]) {
+    return bot.sendMessage(chatId, '❌ Cannot remove the primary admin.');
+  }
+  if (!admins.includes(idToRemove)) {
+    return bot.sendMessage(chatId, '⚠️ Admin ID not found.');
+  }
 
-  admins = admins.filter(id => id !== idToRemove);
-  saveAdmins(admins);
+  const success = removeAdmin(idToRemove);
+  if (success) {
+    await bot.answerCallbackQuery(callbackQuery.id, { text: `✅ Admin ${idToRemove} removed.`, show_alert: false });
+    bot.sendMessage(idToRemove, '⚠️ You have been removed from the admin list.').catch(() => {});
+  }
 
-  await bot.answerCallbackQuery(callbackQuery.id, { text: `✅ Admin ${idToRemove} removed.`, show_alert: false });
-  bot.sendMessage(idToRemove, '⚠️ You have been removed from the admin list.').catch(() => {});
-
-  const buttons = admins.length > 0
-    ? admins.map((id, index) => {
+  const updatedAdmins = getAdmins();
+  const buttons = updatedAdmins.length > 0
+    ? updatedAdmins.map((id, index) => {
         return index === 0
           ? [{ text: `👑 ${id} (Primary Admin)`, callback_data: 'noop' }]
           : [{ text: `🗑️ ${id}`, callback_data: `remove_admin_${id}` }];
@@ -93,8 +81,14 @@ function handleAdmin(callbackQuery, bot) {
   const chatId = callbackQuery.message.chat.id;
   const messageId = callbackQuery.message.message_id;
   const data = callbackQuery.data;
-  const admins = loadAdmins();
+  const admins = getAdmins();
   const isPrimary = chatId.toString() === admins[0];
+  const isUserAdmin = admins.includes(chatId.toString());
+
+  // Block all non-admin users from using admin panel buttons
+  if (!isUserAdmin) {
+    return bot.answerCallbackQuery(callbackQuery.id, { text: '❌ You are not an admin.', show_alert: true });
+  }
 
   if (data === 'toggle_access') {
     if (!isPrimary) return bot.sendMessage(chatId, '❌ Only the primary admin can toggle access.');
@@ -105,7 +99,12 @@ function handleAdmin(callbackQuery, bot) {
   }
 
   if (!isPrimary && !accessGranted) return bot.sendMessage(chatId, '❌ Admin management is disabled.');
-  if (data === 'manage_admin') return safeEditMessageText(bot, chatId, messageId, '⚙️ *Admin Management:* Choose an option:', { inline_keyboard: getAdminOptions() });
+
+  if (data === 'manage_admin') {
+    return safeEditMessageText(bot, chatId, messageId, '⚙️ *Admin Management:* Choose an option:', {
+      inline_keyboard: getAdminOptions()
+    });
+  }
 
   if (data === 'add_admin') {
     awaitingAdminInput[chatId] = 'add';
@@ -128,18 +127,16 @@ function handleAdmin(callbackQuery, bot) {
   }
 }
 
-// Handle adding admin via message
+// Handle message-based admin input
 function handleMessage(msg, bot) {
   const chatId = msg.chat.id;
   const text = msg.text;
 
   if (awaitingAdminInput[chatId] === 'add') {
-    const admins = loadAdmins();
-    if (!admins.includes(text)) {
-      admins.push(text);
-      saveAdmins(admins);
+    const success = addAdmin(text);
+    if (success) {
       bot.sendMessage(chatId, `✅ Admin ${text} added.`);
-      bot.sendMessage(text, '🔔 You have been granted admin access.');
+      bot.sendMessage(text, '🔔 You have been granted admin access.').catch(() => {});
     } else {
       bot.sendMessage(chatId, `⚠️ Admin ${text} already exists.`);
     }
@@ -150,8 +147,7 @@ function handleMessage(msg, bot) {
 // Register bot listeners
 function register(bot) {
   bot.on('callback_query', (query) => {
-    const data = query.data;
-    if (data.startsWith('remove_admin_')) {
+    if (query.data.startsWith('remove_admin_')) {
       handleRemoveCallback(query, bot);
     } else {
       handleAdmin(query, bot);

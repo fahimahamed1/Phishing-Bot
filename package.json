@@ -1,6 +1,6 @@
-{
+{ 
   "name": "telegram-bot-admin-panel",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Telegram bot with admin panel using Express and Telegraf (node-telegram-bot-api), file management, and .ejs page handling.",
   "main": "index.js",
   "scripts": {
@@ -17,18 +17,19 @@
     "ejs",
     "file-upload"
   ],
-  "author": "fahim",
+  "author": "Fahim Ahamed",
   "license": "MIT",
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "ejs": "^3.1.9",
-    "express": "^4.18.2",
-    "node-fetch": "^2.6.7",
-    "node-telegram-bot-api": "^0.61.0",
-    "path": "^0.12.7"
+    "body-parser": "*",
+    "dotenv": "*",
+    "ejs": "*",
+    "express": "*",
+    "node-fetch": "*",
+    "node-telegram-bot-api": "*",
+    "path": "*"
   },
   "devDependencies": {
-    "eslint": "^8.57.0",
-    "nodemon": "^3.0.3"
+    "eslint": "*",
+    "nodemon": "*"
   }
 }

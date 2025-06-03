@@ -1,8 +1,8 @@
 // server/admin/handler/timersuser.js
 
-const { timerUsers, approvedUsers, suspendedUsers, timerUsersFile, approvedUsersFile, suspendedUsersFile } = require('../../connection/db');
-const { safeEditMessageText } = require('../../utils/safeEditMessageText');
-const { isAdmin } = require('../../utils/checkadmin');
+const { timerUsers, approvedUsers, suspendedUsers, timerUsersFile, approvedUsersFile, suspendedUsersFile } = require('../src/connection/db');
+const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
+const { isAdmin } = require('../src/utils/checkadmin');
 const fs = require('fs');
 
 // Save timerUsers data

