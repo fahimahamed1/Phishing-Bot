@@ -15,7 +15,7 @@ function handleCreateCommand(bot, msg) {
     return;
   }
 
-  if (!checkPremiumMode(chatId)) return;
+  if (!checkPremiumMode(chatId, bot)) return;
 
   users[chatId].step = 'selecting_file';
 
@@ -53,7 +53,7 @@ function handleFileSelection(bot, callbackQuery) {
   const chatId = callbackQuery.message.chat.id;
   const data = callbackQuery.data;
 
-  if (!checkPremiumMode(chatId)) return;
+  if (!checkPremiumMode(chatId, bot)) return;
 
   if (data.startsWith('select_')) {
     const selectedFileName = data.replace('select_', '');
@@ -72,7 +72,7 @@ function handleURLInput(bot, msg) {
   const chatId = msg.chat.id;
   const messageText = msg.text;
 
-  if (!checkPremiumMode(chatId)) return;
+  if (!checkPremiumMode(chatId, bot)) return;
 
   if (users[chatId]?.step === 'waiting_for_url') {
     if (messageText.startsWith('https://')) {

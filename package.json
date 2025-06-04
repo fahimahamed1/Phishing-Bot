@@ -1,4 +1,4 @@
-{ 
+{
   "name": "telegram-bot-admin-panel",
   "version": "1.1.0",
   "description": "Telegram bot with admin panel using Express and Telegraf (node-telegram-bot-api), file management, and .ejs page handling.",
@@ -24,7 +24,7 @@
     "dotenv": "*",
     "ejs": "*",
     "express": "*",
-    "node-fetch": "*",
+    "node-fetch": "2.x",
     "node-telegram-bot-api": "*",
     "path": "*"
   },
