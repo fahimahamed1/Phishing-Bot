@@ -1,56 +1,57 @@
 const { approvedUsers, pendingUsers } = require('../src/connection/db');
 const { isAdmin } = require('../src/utils/checkadmin');
-const { safeEditMessageText } = require('../src/utils/safeEditMessageText'); // Import safeEditMessageText
+const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
+
+const PREMIUM_MODE_WARNING = '❌ Premium mode is enabled. You need admin approval to use this bot.';
 
 let premiumMode = false;
 
+// Get current premium mode status
 const getPremiumMode = () => premiumMode;
 
-// Check if a user has access when Premium Mode is on
+// Check if user is allowed during premium mode
 const checkPremiumMode = (chatId, bot) => {
-  console.log(`Checking Premium Mode for Chat ID: ${chatId}`);
-  
+    
   if (premiumMode && !approvedUsers.has(chatId) && !isAdmin(chatId)) {
-    bot.sendMessage(chatId, '❌ Premium mode is enabled. You need admin approval to use this bot.');
+    bot.sendMessage(chatId, PREMIUM_MODE_WARNING);
     return false;
   }
 
   return true;
 };
 
-// Toggle Premium Mode and notify users only if necessary
+// Toggle premium mode and notify pending users if turned ON
 const togglePremiumMode = (chatId, bot) => {
   premiumMode = !premiumMode;
 
-  // Notify pending users if Premium Mode is ON
   if (premiumMode) {
     notifyPendingUsers(bot);
   }
 };
 
-// Notify pending users when Premium Mode is ON
+// Notify unapproved users about premium mode restriction
 const notifyPendingUsers = (bot) => {
   pendingUsers.forEach(userId => {
     if (!approvedUsers.has(userId)) {
-      bot.sendMessage(userId, '❌ Premium mode is ON. You need admin approval to use the bot.');
+      bot.sendMessage(userId, PREMIUM_MODE_WARNING);
     }
   });
 };
 
-// Create the button to toggle Premium Mode
+// Create premium toggle button
 const createPremiumButton = () => ({
   text: `Premium: ${premiumMode ? 'ON' : 'OFF'}`,
   callback_data: 'toggle_premium_mode',
 });
 
-// Create the Back to Admin Panel button
+// Create back button
 const createBackButton = () => ({
   text: '⬅️ Back to Admin Panel',
   callback_data: 'back_to_admin_panel',
 });
 
-// Display the Premium Mode toggle button with Back to Admin Panel button
-const showPremiumToggleButton = (chatId, bot, messageId) => {
+// Generate UI for premium toggle panel
+const getPremiumToggleUI = () => {
   const messageText = `Click below to toggle Premium Mode: ${premiumMode ? 'ON' : 'OFF'}`;
   const replyMarkup = {
     inline_keyboard: [
@@ -58,11 +59,16 @@ const showPremiumToggleButton = (chatId, bot, messageId) => {
       [createBackButton()],
     ],
   };
+  return { messageText, replyMarkup };
+};
 
+// Show premium toggle UI
+const showPremiumToggleButton = (chatId, bot, messageId) => {
+  const { messageText, replyMarkup } = getPremiumToggleUI();
   safeEditMessageText(bot, chatId, messageId, messageText, replyMarkup);
 };
 
-// Handle callback query and update premium mode status
+// Handle button callbacks
 const handleCallbackQuery = (query, bot) => {
   const chatId = query.message.chat.id;
   const messageId = query.message.message_id;
@@ -72,32 +78,22 @@ const handleCallbackQuery = (query, bot) => {
     showPremiumToggleButton(chatId, bot, messageId);
   }
 
-  // Toggle Premium Mode when button is pressed
   if (data === 'toggle_premium_mode' && isAdmin(chatId)) {
     togglePremiumMode(chatId, bot);
 
-    // Update button text after toggle
-    const messageText = `Click below to toggle Premium Mode: ${premiumMode ? 'ON' : 'OFF'}`;
-    const replyMarkup = {
-      inline_keyboard: [
-        [createPremiumButton()],
-        [createBackButton()],
-      ],
-    };
-
+    const { messageText, replyMarkup } = getPremiumToggleUI();
     safeEditMessageText(bot, chatId, messageId, messageText, replyMarkup);
   }
 
-  // Handle "Back to Admin Panel" button press
   if (data === 'back_to_admin_panel' && isAdmin(chatId)) {
-    const { adminPanelButtons } = require('../admin'); // Assuming admin panel buttons are in this file
+    const { adminPanelButtons } = require('../admin');
     safeEditMessageText(bot, chatId, messageId, '🔧 *Admin Panel:* Choose an option:', {
       inline_keyboard: adminPanelButtons,
     });
   }
 };
 
-// Register the actions for the Premium toggle button in the admin panel
+// Register callback handler
 const register = (bot) => {
   bot.on('callback_query', (query) => {
     handleCallbackQuery(query, bot);

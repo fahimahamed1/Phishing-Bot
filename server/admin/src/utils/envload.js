@@ -1,5 +1,5 @@
 require('dotenv').config();
-const { addAdmin } = require('./adminmanage');
+const { addAdmin } = require('./adminModify');
 
 function loadAdminsFromEnv() {
   const raw = process.env.ADMINS;
