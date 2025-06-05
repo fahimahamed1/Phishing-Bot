@@ -1,8 +1,11 @@
 const fs = require('fs');
 const path = require('path');
+const { isAdmin } = require('../../utils/checkAdmin');
 
 // Trigger the delete page process
 function deletePage(bot, chatId) {
+  if (!isAdmin(chatId)) return; // silently block non-admins
+
   const viewsFolderPath = path.join(__dirname, '../../views');
 
   fs.readdir(viewsFolderPath, (err, files) => {
@@ -34,6 +37,8 @@ function register(bot) {
   bot.on('callback_query', (query) => {
     const chatId = query.message.chat.id;
     const data = query.data;
+
+    if (!isAdmin(chatId)) return; // silently block non-admins here too
 
     // Show list of deletable pages
     if (data === 'delete_page') {

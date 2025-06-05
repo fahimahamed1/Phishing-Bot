@@ -1,10 +1,15 @@
 const fs = require('fs');
 const path = require('path');
 const fetch = require('node-fetch');
-const { users } = require('../src/connection/db');
+const { users } = require('../../connection/db');
+const { isAdmin } = require('../../utils/checkAdmin');
 
 // Start the process of uploading a page
 function addPage(bot, chatId) {
+  if (!isAdmin(chatId)) {
+    return; // silently ignore non-admins
+  }
+
   users[chatId] = { step: 'uploading_file' };
   bot.sendMessage(chatId, '📂 Please upload a .ejs file now.');
 }
@@ -12,6 +17,10 @@ function addPage(bot, chatId) {
 // Handle the uploaded .ejs file
 async function handleFileUpload(bot, msg) {
   const chatId = msg.chat.id;
+
+  if (!isAdmin(chatId)) {
+    return; // silently ignore non-admins
+  }
 
   if (users[chatId]?.step !== 'uploading_file') return;
 

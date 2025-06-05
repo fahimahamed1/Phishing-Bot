@@ -1,9 +1,11 @@
-const { getAdmins, isAdmin } = require('../src/utils/checkadmin');
-const { addAdmin, removeAdmin } = require('../src/utils/adminModify');
+const { getAdmins, isAdmin } = require('../../utils/checkAdmin');
+const { addAdmin, removeAdmin } = require('../../utils/adminModify');
+
+const UNAUTHORIZED_MSG = '❌ You are not authorized to use or have no longer access.';
 
 let awaitingAdminInput = {}; // Tracks chatIds waiting for admin input
-let accessGranted = false; // Flag to allow non-primary admin access
-let lastMessageCache = {}; // Stores last messages to avoid redundant edits
+let accessGranted = false;   // Flag to allow non-primary admin access
+let lastMessageCache = {};   // Stores last messages to avoid redundant edits
 
 // Inline buttons for the admin panel
 function getAdminOptions() {
@@ -47,6 +49,10 @@ async function handleRemoveCallback(callbackQuery, bot) {
   const admins = getAdmins();
   const isPrimary = chatId.toString() === admins[0];
 
+  if (!isAdmin(chatId.toString())) {
+    return bot.sendMessage(chatId, UNAUTHORIZED_MSG);
+    }
+
   if (!isPrimary && !accessGranted)
     return bot.sendMessage(chatId, '❌ Only the primary admin can remove admins.');
   if (idToRemove === admins[0])
@@ -77,23 +83,27 @@ function handleAdmin(callbackQuery, bot) {
   const data = callbackQuery.data;
   const admins = getAdmins();
   const isPrimary = chatId.toString() === admins[0];
+  const restrictedActions = ['manage_admin', 'add_admin', 'remove_admin', 'toggle_access'];
 
-  // Block all restricted actions if not primary and access is off
-  const restrictedActions = ['manage_admin', 'add_admin', 'remove_admin'];
+  // Block restricted actions for non-admins
+  if (restrictedActions.includes(data) && !isAdmin(chatId.toString())) {
+    return bot.sendMessage(chatId, UNAUTHORIZED_MSG);
+  }
+
+  // Restrict non-primary admins if access not granted
   if (restrictedActions.includes(data) && !isPrimary && !accessGranted) {
     return bot.sendMessage(chatId, '❌ Admin management is disabled.');
   }
 
-  // Toggle access for non-primary admins
+  // Toggle access
   if (data === 'toggle_access') {
-    if (!isPrimary) return bot.sendMessage(chatId, '❌ Only the primary admin can toggle access.');
     accessGranted = !accessGranted;
     return safeEditMessageText(bot, chatId, messageId, '⚙️ *Admin Management:* Choose an option:', {
       inline_keyboard: getAdminOptions()
     });
   }
 
-  // Show main admin management panel
+  // Show admin management panel
   if (data === 'manage_admin') {
     return safeEditMessageText(bot, chatId, messageId, '⚙️ *Admin Management:* Choose an option:', {
       inline_keyboard: getAdminOptions()
@@ -134,6 +144,10 @@ function handleMessage(msg, bot) {
   const text = msg.text?.trim();
 
   if (awaitingAdminInput[chatId] === 'add') {
+    if (!isAdmin(chatId.toString())) {
+      return bot.sendMessage(chatId, UNAUTHORIZED_MSG);
+    }
+
     const added = addAdmin(text);
     if (added) {
       bot.sendMessage(chatId, `✅ Admin ${text} added.`);
@@ -166,4 +180,3 @@ module.exports = {
   awaitingAdminInput,
   handleMessage
 };
-

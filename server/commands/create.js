@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config(); // Load env variables
-const { users } = require('../admin/src/connection/db');
+const { users } = require('../connection/db');
 const { checkPremiumMode } = require('../admin/handler/premium');
 
 const hostURL = process.env.HOST_URL;
@@ -63,7 +63,7 @@ function handleFileSelection(bot, callbackQuery) {
     users[chatId].step = 'waiting_for_url';
     users[chatId].selectedFileName = selectedFileName;
 
-    bot.sendMessage(chatId, `You selected: ${selectedFileName}\n🌐 Now enter your URL.`);
+    bot.sendMessage(chatId, `✅ You selected: ${selectedFileName}\n🌐 Now enter your URL.`);
   }
 }
 

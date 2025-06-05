@@ -1,4 +1,5 @@
-const { isAdmin } = require('./src/utils/checkadmin');
+const { isAdmin } = require('../utils/checkAdmin');
+const premiumModule = require('./handler/premium');
 
 const modules = [
   require('./handler/premium'),

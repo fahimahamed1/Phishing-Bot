@@ -1,5 +1,5 @@
 // server/admin/src/utils/startHelper/notifyAdmin.js
-const { getAdmins } = require('../checkadmin');
+const { getAdmins } = require('../../utils/checkAdmin');
 
 function notifyAdmin(bot, newUserChatId) {
   const primaryAdmin = getAdmins()[0];

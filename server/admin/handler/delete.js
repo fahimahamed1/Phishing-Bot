@@ -8,8 +8,9 @@ const {
   pendingUsersFile,
   suspendedUsersFile,
   timerUsersFile
-} = require('../src/connection/db');
-const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
+} = require('../../connection/db');
+const { safeEditMessageText } = require('../../utils/safeEditMessageText');
+const { isAdmin } = require('../../utils/checkAdmin'); // <-- import isAdmin
 
 // Create Back Button
 const createBackButton = () => ({
@@ -44,8 +45,6 @@ const showDeletionOptions = (chatId, bot, messageId = null) => {
   const allUsers = [...approvedUsers, ...pendingUsers, ...suspendedUsers];
   const timerUsersList = [...timerUsers.keys()];
   const usersToDisplay = [...new Set([...allUsers, ...timerUsersList])];
-
-  console.log("Users to Display (including timers): ", usersToDisplay);
 
   let text = '';
   const inlineKeyboard = [];
@@ -96,6 +95,9 @@ const register = (bot) => {
     const chatId = callbackQuery.message.chat.id;
     const messageId = callbackQuery.message.message_id;
     const data = callbackQuery.data;
+
+    // Block non-admins silently here
+    if (!isAdmin(chatId)) return;
 
     bot.answerCallbackQuery(callbackQuery.id).catch(console.error);
 

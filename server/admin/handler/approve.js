@@ -1,5 +1,5 @@
 // server/admin/handler/approve.js
-const { approvedUsers } = require('../src/connection/db');
+const { approvedUsers } = require('../../connection/db');
 
 // Show approved users as plain text list
 function showApprovedUsers(chatId, bot) {

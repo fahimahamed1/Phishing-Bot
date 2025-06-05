@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const express = require('express');
-const { users } = require('../admin/src/connection/db');
+const { users } = require('../connection/db');
 
 function registerPageRoutes(app, bot) {
   const router = express.Router();

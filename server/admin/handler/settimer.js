@@ -1,7 +1,7 @@
 const fs = require('fs');
-const { users, timerUsers, approvedUsers, timerUsersFile } = require('../src/connection/db');
-const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
-const { isAdmin } = require('../src/utils/checkadmin');
+const { users, timerUsers, approvedUsers, timerUsersFile } = require('../../connection/db');
+const { safeEditMessageText } = require('../../utils/safeEditMessageText');
+const { isAdmin } = require('../../utils/checkAdmin');
 
 // Prompt to select a user for setting a timer
 const promptSetTimer = (chatId, bot, messageId = null) => {

@@ -6,8 +6,8 @@ const {
   timerUsers,
   pendingUsersFile,
 } = require('../../connection/db');
-const { getPremiumMode } = require('../../../handler/premium');
-const { getRemainingTime } = require('../../../handler/timeruser');
+const { getPremiumMode } = require('../../admin/handler/premium');
+const { getRemainingTime } = require('../../admin/handler/timeruser');
 
 function getUserStatus(chatId) {
   let status = "Free";

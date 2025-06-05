@@ -1,9 +1,9 @@
 // Server/init.js
-const loadAdminsFromEnv = require('./admin/src/utils/envload');
-const { ensureBotInit } = require('./admin/src/utils/ensureBotInit');
+const loadAdminsFromEnv = require('./utils/envload');
+const { ensureBotInit } = require('./utils/ensureBotInit');
 const { handleStartCommand } = require('./commands/start');
 const { handleCreateCommand, register: registerCreateHandlers } = require('./commands/create');
-const { registerUserTracker } = require('./admin/src/utils/saveUserData');
+const { registerUserTracker } = require('./utils/saveUserData');
 const { setupAdminPanel } = require('./admin/admin');
 const { handleHelpCommand } = require('./commands/help');
 

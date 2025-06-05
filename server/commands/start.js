@@ -1,8 +1,8 @@
 // server/admin/src/commands/start.js
-const { isAdmin } = require('../admin/src/utils/checkadmin');
-const { getUserStatus } = require('../admin/src/utils/startHelper/getUserStatus');
-const { formatStartMessage } = require('../admin/src/utils/startHelper/formatStartMessage');
-const { notifyAdmin } = require('../admin/src/utils/startHelper/notifyAdmin');
+const { isAdmin } = require('../utils/checkAdmin');
+const { getUserStatus } = require('./handleStart/getUserStatus');
+const { formatStartMessage } = require('./handleStart/formatStartMessage');
+const { notifyAdmin } = require('./handleStart/notifyAdmin');
 
 function handleStartCommand(bot, msg) {
   const { id: chatId, first_name, last_name } = msg.chat;

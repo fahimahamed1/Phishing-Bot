@@ -1,6 +1,7 @@
-const { approvedUsers, pendingUsers } = require('../src/connection/db');
-const { isAdmin } = require('../src/utils/checkadmin');
-const { safeEditMessageText } = require('../src/utils/safeEditMessageText');
+const { approvedUsers, pendingUsers } = require('../../connection/db');
+const { isAdmin } = require('../../utils/checkAdmin');
+const { safeEditMessageText } = require('../../utils/safeEditMessageText');
+const { createBackButton } = require('../../utils/backButton');
 
 const PREMIUM_MODE_WARNING = '❌ Premium mode is enabled. You need admin approval to use this bot.';
 
@@ -42,12 +43,6 @@ const notifyPendingUsers = (bot) => {
 const createPremiumButton = () => ({
   text: `Premium: ${premiumMode ? 'ON' : 'OFF'}`,
   callback_data: 'toggle_premium_mode',
-});
-
-// Create back button
-const createBackButton = () => ({
-  text: '⬅️ Back to Admin Panel',
-  callback_data: 'back_to_admin_panel',
 });
 
 // Generate UI for premium toggle panel

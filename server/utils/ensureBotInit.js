@@ -1,6 +1,6 @@
 // server/admin/src/utils/ensureBotInit.js
 const { users, suspendedUsers } = require('../connection/db');
-const { awaitingAdminInput, handleMessage } = require('../../handler/manageadmin');
+const { awaitingAdminInput, handleMessage } = require('../admin/handler/manageadmin');
 
 function ensureBotInit(bot) {
   bot.on('message', (msg) => {

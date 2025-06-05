@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const adminsPath = path.resolve(__dirname, '../storage/admins.json');
+const adminsPath = path.resolve(__dirname, '../data/admins.json');
 
 // Ensure admins.json exists
 function ensureAdminsFile() {

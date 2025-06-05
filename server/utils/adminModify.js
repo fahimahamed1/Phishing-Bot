@@ -1,8 +1,8 @@
 const fs = require('fs');
 const path = require('path');
-const { getAdmins } = require('./checkadmin');
+const { getAdmins } = require('./checkAdmin');
 
-const adminsPath = path.resolve(__dirname, '../storage/admins.json');
+const adminsPath = path.resolve(__dirname, '../data/admins.json');
 
 // Save updated admin list
 function saveAdmins(admins) {
