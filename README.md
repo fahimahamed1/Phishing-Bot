@@ -1,36 +1,32 @@
 # Telegram Bot Admin Panel
 
-A Telegram bot with a powerful admin panel to manage users, toggle premium mode, handle approvals, suspensions, timers, pages, and more — all from within Telegram.
+A fully featured Telegram bot with a powerful admin panel — manage users, premium access, interface pages, approvals, suspensions, timers, and more, all from within Telegram.
 
 ---
 
-## Features
+## ✨ Features
 
-- **Admin Panel**  
-  Manage the bot via an easy-to-use panel accessible to authorized admins:
+- **Admin Panel** – Manage everything via Telegram:
   - Toggle **Premium Mode** to restrict access to approved users only.
   - View and approve **Pending Users**.
   - Suspend or delete users.
-  - Add custom users manually.
-  - Manage users with timers for limited access.
-  - Broadcast messages to users.
-  - Add or delete `.ejs` pages for the bot interface.
+  - Manually add custom users.
+  - Set **Timers** for temporary user access.
+  - Broadcast messages to all users.
+  - Add or delete `.ejs` **pages** used in the bot interface.
 
-- **User Management**  
-  Keep track of:
-  - Users waiting for approval.
-  - Approved users.
-  - Suspended users.
+- **User Management**
+  - View pending, approved, and suspended users.
 
-- **Timers**  
-  Set time-based access for users and remove timers when needed.
+- **Timers**
+  - Grant or revoke temporary access automatically.
 
-- **Page Management**  
-  Easily add or remove interface pages used by the bot.
+- **Page Management**
+  - Dynamically manage interface pages like welcome or help messages.
 
 ---
 
-## Requirements
+## 📦 Requirements
 
 - **Node.js** (v14.x or higher)
 - **npm** (v6.x or higher)
@@ -39,7 +35,7 @@ A Telegram bot with a powerful admin panel to manage users, toggle premium mode,
 
 ---
 
-## Installation & Setup
+## 🚀 Installation & Setup
 
 ### 1. Clone the repository
 
@@ -50,19 +46,18 @@ cd Phishing-bot
 
 ### 2. Create a `.env` file
 
-In the root folder, create a `.env` file and add your configuration:
+```bash
+cp .env.example .env
+```
+
+Edit the `.env` file with your configuration:
 
 ```env
 BOT_TOKEN=your_bot_token_here
 HOST_URL=your_host_url_here
-PORT=3000
-ADMINS=comma_separated_admin_ids
+PORT=3000 (optional)
+ADMINS=admin_chatid_here
 ```
-
-- **BOT_TOKEN:** Your Telegram bot token from BotFather.
-- **HOST_URL:** Your server URL or `localhost` for local testing.
-- **PORT:** Port number to run the bot (default is 3000).
-- **ADMINS:** Telegram user IDs for admins (comma-separated if more than one).
 
 ### 3. Install dependencies
 
@@ -80,35 +75,86 @@ The bot should now be up and running! Admins can access the admin panel through 
 
 ---
 
-## Usage
+## 🐳 Run with Docker
+
+You can run this bot using **Docker** or **Docker Compose** for easier deployment and management.
+
+### Option 1: Run with Docker CLI
+
+```bash
+docker run -d -p 3000:3000 --name phishing-bot-container \
+  -e BOT_TOKEN=your_bot_token_here \
+  -e HOST_URL=your_host_url_here \
+  -e ADMINS=admin_chatid_here \
+  fahimahamed/phishing-bot:latest
+```
+
+> ✅ Replace the environment values with your actual bot token, host URL, and admin Telegram user IDs.
+
+### Option 2: Run with Docker Compose
+
+1. Create a `.env` file:
+
+```env
+BOT_TOKEN=your_bot_token_here
+HOST_URL=your_host_url_here
+PORT=3000 (optional)
+ADMINS=admin_chatid_here
+```
+
+2. Create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+
+services:
+  phishing-bot:
+    image: fahimahamed/phishing-bot:latest
+    container_name: phishing-bot-container
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    restart: unless-stopped
+```
+
+3. Start the bot:
+
+```bash
+docker-compose up -d
+```
+
+---
+
+## 🛠 Usage
 
 - Only users listed as admins in `.env` under `ADMINS` can access the admin panel.
-- Admins can approve or suspend users, toggle premium mode, manage timers, and more directly via Telegram commands and buttons.
+- Admins can approve or suspend users, toggle premium mode, manage timers, and more directly via Telegram.
 - Premium mode restricts the bot’s usage to approved users only.
 - Timers allow temporary access control for users.
 
 ---
 
-## Troubleshooting
+## 🧩 Troubleshooting
 
-- **Bot not responding?**  
-  Make sure your `BOT_TOKEN` is correct and the bot is started (`npm start`).
+- **Bot not responding?**
+  - Make sure your `BOT_TOKEN` is correct and the bot is running (`npm start` or `docker ps`).
 
-- **Admin commands not working?**  
-  Check that your Telegram user ID is included in the `ADMINS` environment variable.
+- **Admin commands not working?**
+  - Ensure your Telegram user ID is included in the `ADMINS` environment variable.
 
-- **Port conflicts?**  
-  Change the `PORT` in `.env` if the default port is busy.
+- **Port conflicts?**
+  - Change the `PORT` value in `.env` or Docker settings.
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 Feel free to open issues or submit pull requests! Suggestions and improvements are welcome.
 
 ---
 
-## License
+## 📄 License
 
 This project is open source and free to use under the MIT License.
 
